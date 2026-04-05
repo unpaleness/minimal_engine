@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 class GLFWwindow;
+struct VkInstance_T;
 
 class App
 {
@@ -14,4 +15,5 @@ private:
     void cleanup();
 
     GLFWwindow* window = nullptr;
+    VkInstance_T* vkInstance = nullptr;
 };

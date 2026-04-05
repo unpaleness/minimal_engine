@@ -8,6 +8,7 @@ _cmake/
 build
 CMakeCache.txt
 CMakeFiles/
+CMakeLists.txt.DotSettings.user
 CMakeScripts/
 Debug/
 Makefile
