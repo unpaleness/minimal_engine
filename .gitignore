@@ -2,12 +2,11 @@
 *.sln
 *.vcxproj
 *.vcxproj.filters
+_cmake/
 .idea
 CMakeCache.txt
 CMakeFiles/
 Debug/
-glfw/
-glm/
 MinSizeRel/
 Release/
 RelWithDebInfo/

@@ -4,8 +4,8 @@ project(MinimalEngine LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_subdirectory(../glfw glfw)
-add_subdirectory(../glm glm)
+add_subdirectory(../glfw _cmake/glfw)
+add_subdirectory(../glm _cmake/glm)
 
 find_package(Vulkan REQUIRED)
 
