@@ -1,0 +1,14 @@
+*.cmake
+*.sln
+*.vcxproj
+*.vcxproj.filters
+.idea
+CMakeCache.txt
+CMakeFiles/
+Debug/
+glfw/
+glm/
+MinSizeRel/
+Release/
+RelWithDebInfo/
+x64/
