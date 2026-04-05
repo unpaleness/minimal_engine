@@ -1,19 +1,20 @@
 ﻿#pragma once
 
+#include <memory>
+
 class GLFWwindow;
-struct VkInstance_T;
+class Graphics;
 
 class App
 {
 public:
-    void run();
+    void Run();
 
 private:
-    void initWindow();
-    void initVulkan();
-    void mainLoop();
-    void cleanup();
+    void InitWindow();
+    void MainLoop();
+    void Cleanup();
 
     GLFWwindow* window = nullptr;
-    VkInstance_T* vkInstance = nullptr;
+    Graphics* graphics = nullptr;
 };
