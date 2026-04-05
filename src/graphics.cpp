@@ -191,11 +191,12 @@ Graphics::Graphics()
 
 Graphics::~Graphics()
 {
+    vkDestroyDevice(device, nullptr);
     if (enableValidationLayers)
     {
-        DestroyDebugUtilsMessengerEXT(vkInstance, vkDebugMessenger, nullptr);
+        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     }
-    vkDestroyInstance(vkInstance, nullptr);
+    vkDestroyInstance(instance, nullptr);
 }
 
 void Graphics::CreateInstance()
@@ -237,7 +238,7 @@ void Graphics::CreateInstance()
         createInfo.pNext = nullptr;
     }
 
-    if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS)
+    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create instance!");
     }
@@ -253,7 +254,7 @@ void Graphics::SetupDebugMessenger()
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     PopulateDebugMessengerCreateInfo(createInfo);
 
-    if (CreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &vkDebugMessenger) != VK_SUCCESS)
+    if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to set up debug messenger!");
     }
@@ -262,7 +263,7 @@ void Graphics::SetupDebugMessenger()
 void Graphics::PickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
     if (deviceCount == 0)
     {
@@ -270,19 +271,47 @@ void Graphics::PickPhysicalDevice()
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
     for (const auto& device : devices)
     {
         if (isDeviceSuitable(device))
         {
-            vkPhysicalDevice = device;
+            physicalDevice = device;
             break;
         }
     }
 
-    if (vkPhysicalDevice == VK_NULL_HANDLE)
+    if (physicalDevice == VK_NULL_HANDLE)
     {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
+}
+
+void Graphics::CreateLogicalDevice()
+{
+    QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
+
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+    queueCreateInfo.queueCount = 1;
+
+    float queuePriority = 1.0f;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.queueCreateInfoCount = 1;
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = 0;
+
+    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create logical device!");
+    }
+    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 }
