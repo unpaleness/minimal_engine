@@ -40,4 +40,5 @@ private:
     VkFormat vkSwapChainImageFormat;
     VkExtent2D vkSwapChainExtent;
     std::vector<VkImageView> vkSwapChainImageViews;
+    VkPipelineLayout vkPipelineLayout = nullptr;
 };
