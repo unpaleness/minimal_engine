@@ -1,0 +1,40 @@
+﻿#pragma once
+
+#include <vector>
+
+#include <vulkan/vulkan_core.h>
+
+struct GLFWwindow;
+
+class Render
+{
+public:
+    Render(GLFWwindow* aWindow);
+    ~Render();
+
+    Render(const Render&) = delete;
+    Render(Render&&) = delete;
+    Render& operator=(const Render&) = delete;
+    Render& operator=(Render&&) = delete;
+
+private:
+    void CreateInstance();
+    void SetupDebugMessenger();
+    void CreateSurface();
+    void PickPhysicalDevice();
+    void CreateLogicalDevice();
+    void CreateSwapChain();
+
+private:
+    GLFWwindow* window = nullptr;
+    VkInstance vkInstance = nullptr;
+    VkDebugUtilsMessengerEXT vkDebugMessenger = nullptr;
+    VkPhysicalDevice vkPhysicalDevice = nullptr;
+    VkDevice vkDevice = nullptr;
+    VkQueue vkPresentQueue = nullptr;
+    VkSurfaceKHR vkSurface = nullptr;
+    VkSwapchainKHR vkSwapChain = nullptr;
+    std::vector<VkImage> vkSwapChainImages;
+    VkFormat vkSwapChainImageFormat;
+    VkExtent2D vkSwapChainExtent;
+};

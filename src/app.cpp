@@ -2,7 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "graphics.h"
+#include "render.h"
 
 namespace
 {
@@ -14,7 +14,7 @@ void App::Run()
 {
     InitWindow();
 
-    graphics = new Graphics(window);
+    render = new Render(window);
 
     MainLoop();
     Cleanup();
@@ -39,8 +39,8 @@ void App::MainLoop()
 
 void App::Cleanup()
 {
-    delete graphics;
-    graphics = nullptr;
+    delete render;
+    render = nullptr;
 
     glfwDestroyWindow(window);
     glfwTerminate();

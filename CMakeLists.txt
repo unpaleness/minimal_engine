@@ -12,7 +12,7 @@ add_subdirectory(../glm _cmake/glm)
 find_package(Vulkan REQUIRED)
 
 add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/app.cpp src/app.h src/graphics.cpp src/graphics.h)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/app.cpp src/app.h src/render.cpp src/render.h)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE GLFW_INCLUDE_VULKAN)
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4>

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-class Graphics;
+class Render;
 struct GLFWwindow;
 
 class App
@@ -14,5 +14,5 @@ private:
     void Cleanup();
 
     GLFWwindow* window = nullptr;
-    Graphics* graphics = nullptr;
+    Render* render = nullptr;
 };
