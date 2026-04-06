@@ -42,6 +42,6 @@ private:
     VkExtent2D vkSwapChainExtent;
     std::vector<VkImageView> vkSwapChainImageViews;
     VkPipelineLayout vkPipelineLayout = nullptr;
-    VkRenderPass renderPass = nullptr;
-    VkPipelineLayout pipelineLayout = nullptr;
+    VkRenderPass vkRenderPass = nullptr;
+    VkPipeline vkGraphicsPipeline = nullptr;
 };
