@@ -14,7 +14,7 @@ void App::Run()
 {
     InitWindow();
 
-    graphics = new Graphics();
+    graphics = new Graphics(window);
 
     MainLoop();
     Cleanup();

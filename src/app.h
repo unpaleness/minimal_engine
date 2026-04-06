@@ -1,9 +1,7 @@
 ﻿#pragma once
 
-#include <memory>
-
-class GLFWwindow;
 class Graphics;
+struct GLFWwindow;
 
 class App
 {

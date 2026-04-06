@@ -14,6 +14,13 @@ find_package(Vulkan REQUIRED)
 add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/app.cpp src/app.h src/graphics.cpp src/graphics.h)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE GLFW_INCLUDE_VULKAN)
+target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+        $<$<CXX_COMPILER_ID:MSVC>:/WX>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wextra>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Werror>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-O2>)
 
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
         Vulkan::Vulkan
