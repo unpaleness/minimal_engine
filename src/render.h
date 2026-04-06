@@ -25,6 +25,7 @@ private:
     void CreateLogicalDevice();
     void CreateSwapChain();
     void CreateImageViews();
+    void CreateRenderPass();
     void CreateGraphicsPipeline();
 
 private:
@@ -41,4 +42,6 @@ private:
     VkExtent2D vkSwapChainExtent;
     std::vector<VkImageView> vkSwapChainImageViews;
     VkPipelineLayout vkPipelineLayout = nullptr;
+    VkRenderPass renderPass = nullptr;
+    VkPipelineLayout pipelineLayout = nullptr;
 };
