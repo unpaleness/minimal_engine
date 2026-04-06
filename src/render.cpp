@@ -1,6 +1,7 @@
 ﻿#include "render.h"
 
 #include <algorithm>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -288,8 +289,7 @@ namespace
 
         if (!file.is_open())
         {
-            std::cerr << "failed to open file: " << filename << '\n';
-            throw std::runtime_error("failed to open file!");
+            throw std::runtime_error("failed to open " + filename + "!");
         }
 
         const size_t fileSize = file.tellg();
@@ -607,8 +607,8 @@ void Render::CreateRenderPass()
 
 void Render::CreateGraphicsPipeline()
 {
-    const std::vector<char>& vertShaderCode = ReadFile("vert.spv");
-    const std::vector<char>& fragShaderCode = ReadFile("frag.spv");
+    const std::vector<char>& vertShaderCode = ReadFile(SHADER_OUT_DIR "/shader.vert.spv");
+    const std::vector<char>& fragShaderCode = ReadFile(SHADER_OUT_DIR "/shader.frag.spv");
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode, vkDevice);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode, vkDevice);

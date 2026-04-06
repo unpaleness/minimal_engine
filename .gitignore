@@ -14,6 +14,7 @@ Debug/
 Makefile
 MinimalEngine.xcodeproj/
 MinSizeRel/
+compiled_shaders/
 Release/
 RelWithDebInfo/
 x64/
