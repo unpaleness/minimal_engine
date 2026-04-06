@@ -24,6 +24,7 @@ private:
     void PickPhysicalDevice();
     void CreateLogicalDevice();
     void CreateSwapChain();
+    void CreateImageViews();
 
 private:
     GLFWwindow* window = nullptr;
@@ -37,4 +38,5 @@ private:
     std::vector<VkImage> vkSwapChainImages;
     VkFormat vkSwapChainImageFormat;
     VkExtent2D vkSwapChainExtent;
+    std::vector<VkImageView> vkSwapChainImageViews;
 };
