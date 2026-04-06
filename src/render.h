@@ -25,6 +25,7 @@ private:
     void CreateLogicalDevice();
     void CreateSwapChain();
     void CreateImageViews();
+    void CreateGraphicsPipeline();
 
 private:
     GLFWwindow* window = nullptr;
