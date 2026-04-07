@@ -332,14 +332,22 @@ Render::Render(GLFWwindow* aWindow) :
     CreateImageViews();
     CreateRenderPass();
     CreateGraphicsPipeline();
+    CreateFrameBuffers();
+    CreateCommandPool();
+    CreateCommandBuffer();
 }
 
 Render::~Render()
 {
+    vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+    for (const VkFramebuffer framebuffer : vkSwapChainFramebuffers)
+    {
+        vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+    }
     vkDestroyPipeline(vkDevice, vkGraphicsPipeline, nullptr);
     vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
     vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-    for (auto vkImageView : vkSwapChainImageViews)
+    for (const VkImageView vkImageView : vkSwapChainImageViews)
     {
         vkDestroyImageView(vkDevice, vkImageView, nullptr);
     }
@@ -747,4 +755,57 @@ void Render::CreateGraphicsPipeline()
 
     vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
     vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
+}
+
+void Render::CreateFrameBuffers()
+{
+    vkSwapChainFramebuffers.resize(vkSwapChainImageViews.size());
+
+    for (size_t i = 0; i < vkSwapChainImageViews.size(); i++)
+    {
+        VkImageView attachments[] = {vkSwapChainImageViews[i]};
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = vkRenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = vkSwapChainExtent.width;
+        framebufferInfo.height = vkSwapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(vkDevice, &framebufferInfo, nullptr, &vkSwapChainFramebuffers[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
+    }
+}
+
+void Render::CreateCommandPool()
+{
+    QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(vkPhysicalDevice, vkSurface);
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+    if (vkCreateCommandPool(vkDevice, &poolInfo, nullptr, &vkCommandPool) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create command pool!");
+    }
+}
+
+void Render::CreateCommandBuffer()
+{
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = vkCommandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    if (vkAllocateCommandBuffers(vkDevice, &allocInfo, &vkCommandBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate command buffers!");
+    }
 }

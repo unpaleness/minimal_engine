@@ -27,6 +27,9 @@ private:
     void CreateImageViews();
     void CreateRenderPass();
     void CreateGraphicsPipeline();
+    void CreateFrameBuffers();
+    void CreateCommandPool();
+    void CreateCommandBuffer();
 
 private:
     GLFWwindow* window = nullptr;
@@ -44,4 +47,7 @@ private:
     VkPipelineLayout vkPipelineLayout = nullptr;
     VkRenderPass vkRenderPass = nullptr;
     VkPipeline vkGraphicsPipeline = nullptr;
+    std::vector<VkFramebuffer> vkSwapChainFramebuffers;
+    VkCommandPool vkCommandPool = nullptr;
+    VkCommandBuffer vkCommandBuffer = nullptr;
 };
