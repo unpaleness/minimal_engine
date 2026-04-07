@@ -17,6 +17,9 @@ public:
     Render& operator=(const Render&) = delete;
     Render& operator=(Render&&) = delete;
 
+    void DrawFrame();
+    void WaitForIdle();
+
 private:
     void CreateInstance();
     void SetupDebugMessenger();
@@ -30,6 +33,7 @@ private:
     void CreateFrameBuffers();
     void CreateCommandPool();
     void CreateCommandBuffer();
+    void CreateSyncObjects();
 
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
@@ -39,6 +43,7 @@ private:
     VkDebugUtilsMessengerEXT vkDebugMessenger = nullptr;
     VkPhysicalDevice vkPhysicalDevice = nullptr;
     VkDevice vkDevice = nullptr;
+    VkQueue vkGraphicsQueue = nullptr;
     VkQueue vkPresentQueue = nullptr;
     VkSurfaceKHR vkSurface = nullptr;
     VkSwapchainKHR vkSwapChain = nullptr;
@@ -52,4 +57,7 @@ private:
     std::vector<VkFramebuffer> vkSwapChainFramebuffers;
     VkCommandPool vkCommandPool = nullptr;
     VkCommandBuffer vkCommandBuffer = nullptr;
+    VkSemaphore vkImageAvailableSemaphore = nullptr;
+    VkSemaphore vkRenderFinishedSemaphore = nullptr;
+    VkFence vkInFlightFence = nullptr;
 };

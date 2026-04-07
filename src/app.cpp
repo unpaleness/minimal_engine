@@ -34,7 +34,10 @@ void App::MainLoop()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        render->DrawFrame();
     }
+
+    render->WaitForIdle();
 }
 
 void App::Cleanup()
