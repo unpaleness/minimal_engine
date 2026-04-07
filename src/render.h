@@ -31,6 +31,8 @@ private:
     void CreateCommandPool();
     void CreateCommandBuffer();
 
+    void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
 private:
     GLFWwindow* window = nullptr;
     VkInstance vkInstance = nullptr;
