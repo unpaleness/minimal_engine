@@ -337,6 +337,7 @@ Render::Render(GLFWwindow* aWindow) :
     CreateCommandPool();
     CreateCommandBuffers();
     CreateSyncObjects();
+    CreateSyncObjectsPresent();
 }
 
 Render::~Render()
@@ -351,7 +352,6 @@ Render::~Render()
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
         vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
         vkDestroyFence(device, inFlightFences[i], nullptr);
     }
 
@@ -371,7 +371,6 @@ Render::~Render()
 void Render::DrawFrame()
 {
     VkFence& vkInFlightFence = inFlightFences[currentFrame];
-    VkSemaphore& vkRenderFinishedSemaphore = renderFinishedSemaphores[currentFrame];
     VkSemaphore& vkImageAvailableSemaphore = imageAvailableSemaphores[currentFrame];
     VkCommandBuffer& vkCommandBuffer = commandBuffers[currentFrame];
 
@@ -380,7 +379,7 @@ void Render::DrawFrame()
 
     // Acquire an image from the swap chain, non-blocking, executes on GPU
     uint32_t imageIndex;
-    const VkResult result =
+    VkResult result =
         vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, vkImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || framebufferResized)
     {
@@ -411,7 +410,7 @@ void Render::DrawFrame()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &vkCommandBuffer;
 
-    VkSemaphore signalSemaphores[] = {vkRenderFinishedSemaphore};
+    VkSemaphore signalSemaphores[] = {presentSemaphores[imageIndex]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -432,7 +431,11 @@ void Render::DrawFrame()
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
 
-    vkQueuePresentKHR(presentQueue, &presentInfo);
+    result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+    {
+        throw std::runtime_error("failed to queue preset KHR!");
+    }
 }
 
 void Render::WaitForIdle()
@@ -586,16 +589,17 @@ void Render::CreateSwapChain()
     VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
     VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities, window);
 
-    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-    if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+    swapChainImageCount = swapChainSupport.capabilities.minImageCount + 1;
+    if (swapChainSupport.capabilities.maxImageCount > 0
+        && swapChainImageCount > swapChainSupport.capabilities.maxImageCount)
     {
-        imageCount = swapChainSupport.capabilities.maxImageCount;
+        swapChainImageCount = swapChainSupport.capabilities.maxImageCount;
     }
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface = surface;
-    createInfo.minImageCount = imageCount;
+    createInfo.minImageCount = swapChainImageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
     createInfo.imageExtent = extent;
@@ -629,9 +633,9 @@ void Render::CreateSwapChain()
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
-    swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+    vkGetSwapchainImagesKHR(device, swapChain, &swapChainImageCount, nullptr);
+    swapChainImages.resize(swapChainImageCount);
+    vkGetSwapchainImagesKHR(device, swapChain, &swapChainImageCount, swapChainImages.data());
 
     swapChainImageFormat = surfaceFormat.format;
     swapChainExtent = extent;
@@ -909,7 +913,6 @@ void Render::CreateCommandBuffers()
 void Render::CreateSyncObjects()
 {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
@@ -921,17 +924,43 @@ void Render::CreateSyncObjects()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS
-            || vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS
-            || vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS)
         {
-            throw std::runtime_error("failed to create semaphores!");
+            throw std::runtime_error("failed to create image semaphores!");
+        }
+    }
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        if (vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create in flight fences!");
+        }
+    }
+}
+
+void Render::CreateSyncObjectsPresent()
+{
+    presentSemaphores.resize(swapChainImageCount);
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    for (size_t i = 0; i < swapChainImageCount; ++i)
+    {
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &presentSemaphores[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create present semaphores!");
         }
     }
 }
 
 void Render::CleanSwapChain()
 {
+    for (size_t i = 0; i < swapChainImageCount; ++i)
+    {
+        vkDestroySemaphore(device, presentSemaphores[i], nullptr);
+    }
     for (const VkFramebuffer framebuffer : swapChainFramebuffers)
     {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -960,6 +989,7 @@ void Render::RecreateSwapChain()
     CreateSwapChain();
     CreateImageViews();
     CreateFrameBuffers();
+    CreateSyncObjectsPresent();
 }
 
 void Render::RecordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t imageIndex)

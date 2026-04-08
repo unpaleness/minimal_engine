@@ -35,6 +35,7 @@ private:
     void CreateCommandPool();
     void CreateCommandBuffers();
     void CreateSyncObjects();
+    void CreateSyncObjectsPresent();
     void CleanSwapChain();
     void RecreateSwapChain();
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -49,6 +50,7 @@ private:
     VkQueue presentQueue = nullptr;
     VkSurfaceKHR surface = nullptr;
     VkSwapchainKHR swapChain = nullptr;
+    uint32_t swapChainImageCount = 0;
     std::vector<VkImage> swapChainImages;
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
@@ -60,7 +62,7 @@ private:
     VkCommandPool commandPool = nullptr;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkSemaphore> presentSemaphores;
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
     bool framebufferResized = false;
