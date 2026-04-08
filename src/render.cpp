@@ -16,6 +16,7 @@ namespace
 {
     const std::vector<const char*> VALIDATION_LAYERS{"VK_LAYER_KHRONOS_validation"};
     const std::vector<const char*> DEVICE_EXTENSIONS{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
     // not const to get rid of warnings
 #ifdef NDEBUG
@@ -334,15 +335,18 @@ Render::Render(GLFWwindow* aWindow) :
     CreateGraphicsPipeline();
     CreateFrameBuffers();
     CreateCommandPool();
-    CreateCommandBuffer();
+    CreateCommandBuffers();
     CreateSyncObjects();
 }
 
 Render::~Render()
 {
-    vkDestroySemaphore(vkDevice, vkImageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphore, nullptr);
-    vkDestroyFence(vkDevice, vkInFlightFence, nullptr);
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        vkDestroySemaphore(vkDevice, vkImageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(vkDevice, vkInFlightFences[i], nullptr);
+    }
     vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
     for (const VkFramebuffer framebuffer : vkSwapChainFramebuffers)
     {
@@ -367,6 +371,11 @@ Render::~Render()
 
 void Render::DrawFrame()
 {
+    VkFence& vkInFlightFence = vkInFlightFences[currentFrame];
+    VkSemaphore& vkRenderFinishedSemaphore = vkRenderFinishedSemaphores[currentFrame];
+    VkSemaphore& vkImageAvailableSemaphore = vkImageAvailableSemaphores[currentFrame];
+    VkCommandBuffer& vkCommandBuffer = vkCommandBuffers[currentFrame];
+
     // CPU is waiting, blocking operation
     vkWaitForFences(vkDevice, 1, &vkInFlightFence, VK_TRUE, UINT64_MAX);
     // Reset semaphore after wait
@@ -866,15 +875,17 @@ void Render::CreateCommandPool()
     }
 }
 
-void Render::CreateCommandBuffer()
+void Render::CreateCommandBuffers()
 {
+    vkCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = vkCommandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
-    if (vkAllocateCommandBuffers(vkDevice, &allocInfo, &vkCommandBuffer) != VK_SUCCESS)
+    if (vkAllocateCommandBuffers(vkDevice, &allocInfo, vkCommandBuffers.data()) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to allocate command buffers!");
     }
@@ -882,6 +893,10 @@ void Render::CreateCommandBuffer()
 
 void Render::CreateSyncObjects()
 {
+    vkImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    vkRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    vkInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -889,11 +904,14 @@ void Render::CreateSyncObjects()
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkImageAvailableSemaphore) != VK_SUCCESS
-        || vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkRenderFinishedSemaphore) != VK_SUCCESS
-        || vkCreateFence(vkDevice, &fenceInfo, nullptr, &vkInFlightFence) != VK_SUCCESS)
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
-        throw std::runtime_error("failed to create semaphores!");
+        if (vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkImageAvailableSemaphores[i]) != VK_SUCCESS
+            || vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkRenderFinishedSemaphores[i]) != VK_SUCCESS
+            || vkCreateFence(vkDevice, &fenceInfo, nullptr, &vkInFlightFences[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create semaphores!");
+        }
     }
 }
 
@@ -946,4 +964,6 @@ void Render::RecordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t i
     {
         throw std::runtime_error("failed to record command buffer!");
     }
+
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
