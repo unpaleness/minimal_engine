@@ -24,9 +24,20 @@ void App::InitWindow()
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     window = glfwCreateWindow(WIDTH, HEIGHT, PROJECT_NAME, nullptr, nullptr);
+    glfwSetWindowUserPointer(window, this);
+    glfwSetFramebufferSizeCallback(window,
+        [](GLFWwindow* window, const int32_t, const int32_t)
+        {
+            auto app = static_cast<App*>(glfwGetWindowUserPointer(window));
+            if (!app || !app->render)
+            {
+                return;
+            }
+            app->render->OnFrameBufferResized();
+        });
 }
 
 void App::MainLoop()

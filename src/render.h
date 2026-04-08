@@ -19,6 +19,7 @@ public:
 
     void DrawFrame();
     void WaitForIdle();
+    void OnFrameBufferResized();
 
 private:
     void CreateInstance();
@@ -34,31 +35,33 @@ private:
     void CreateCommandPool();
     void CreateCommandBuffers();
     void CreateSyncObjects();
-
+    void CleanSwapChain();
+    void RecreateSwapChain();
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
 private:
     GLFWwindow* window = nullptr;
-    VkInstance vkInstance = nullptr;
-    VkDebugUtilsMessengerEXT vkDebugMessenger = nullptr;
-    VkPhysicalDevice vkPhysicalDevice = nullptr;
-    VkDevice vkDevice = nullptr;
-    VkQueue vkGraphicsQueue = nullptr;
-    VkQueue vkPresentQueue = nullptr;
-    VkSurfaceKHR vkSurface = nullptr;
-    VkSwapchainKHR vkSwapChain = nullptr;
-    std::vector<VkImage> vkSwapChainImages;
-    VkFormat vkSwapChainImageFormat;
-    VkExtent2D vkSwapChainExtent;
-    std::vector<VkImageView> vkSwapChainImageViews;
-    VkPipelineLayout vkPipelineLayout = nullptr;
-    VkRenderPass vkRenderPass = nullptr;
-    VkPipeline vkGraphicsPipeline = nullptr;
-    std::vector<VkFramebuffer> vkSwapChainFramebuffers;
-    VkCommandPool vkCommandPool = nullptr;
-    std::vector<VkCommandBuffer> vkCommandBuffers;
-    std::vector<VkSemaphore> vkImageAvailableSemaphores;
-    std::vector<VkSemaphore> vkRenderFinishedSemaphores;
-    std::vector<VkFence> vkInFlightFences;
+    VkInstance instance = nullptr;
+    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
+    VkPhysicalDevice physicalDevice = nullptr;
+    VkDevice device = nullptr;
+    VkQueue graphicsQueue = nullptr;
+    VkQueue presentQueue = nullptr;
+    VkSurfaceKHR surface = nullptr;
+    VkSwapchainKHR swapChain = nullptr;
+    std::vector<VkImage> swapChainImages;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
+    std::vector<VkImageView> swapChainImageViews;
+    VkPipelineLayout pipelineLayout = nullptr;
+    VkRenderPass renderPass = nullptr;
+    VkPipeline graphicsPipeline = nullptr;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
+    VkCommandPool commandPool = nullptr;
+    std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
+    bool framebufferResized = false;
 };
