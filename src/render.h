@@ -33,6 +33,7 @@ private:
     void CreateGraphicsPipeline();
     void CreateFrameBuffers();
     void CreateCommandPool();
+    void CreateVertexBuffers();
     void CreateCommandBuffers();
     void CreateSyncObjects();
     void CreateSyncObjectsPresent();
@@ -60,6 +61,8 @@ private:
     VkPipeline graphicsPipeline = nullptr;
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkCommandPool commandPool = nullptr;
+    VkBuffer vertexBuffer = nullptr;
+    VkDeviceMemory vertexBufferMemory = nullptr;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> presentSemaphores;

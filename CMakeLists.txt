@@ -4,7 +4,7 @@ project(MinimalEngine LANGUAGES CXX)
 
 add_compile_definitions(PROJECT_NAME="${CMAKE_PROJECT_NAME}")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(../glfw _cmake/glfw)
 add_subdirectory(../glm _cmake/glm)
