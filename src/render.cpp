@@ -51,8 +51,10 @@ namespace
         }
     };
 
-    const std::vector<Vertex> vertices = {
-        {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}, {{-0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}}};
+    const std::vector<Vertex> VERTICES = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+    const std::vector<uint16_t> INDICES = {0, 1, 2, 2, 3, 0};
 
     // not const to get rid of warnings
 #ifdef NDEBUG
@@ -455,6 +457,7 @@ Render::Render(GLFWwindow* aWindow) :
     CreateFrameBuffers();
     CreateCommandPool();
     CreateVertexBuffers();
+    CreateIndexBuffers();
     CreateCommandBuffers();
     CreateSyncObjects();
     CreateSyncObjectsPresent();
@@ -464,6 +467,8 @@ Render::~Render()
 {
     CleanSwapChain();
 
+    vkDestroyBuffer(device, indexBuffer, nullptr);
+    vkFreeMemory(device, indexBufferMemory, nullptr);
     vkDestroyBuffer(device, vertexBuffer, nullptr);
     vkFreeMemory(device, vertexBufferMemory, nullptr);
 
@@ -1016,7 +1021,7 @@ void Render::CreateCommandPool()
 
 void Render::CreateVertexBuffers()
 {
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    VkDeviceSize bufferSize = sizeof(VERTICES[0]) * VERTICES.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -1025,7 +1030,7 @@ void Render::CreateVertexBuffers()
 
     void* data;
     vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), (size_t)bufferSize);
+    memcpy(data, VERTICES.data(), bufferSize);
     vkUnmapMemory(device, stagingBufferMemory);
 
     CreateBuffer(physicalDevice, device, bufferSize,
@@ -1033,6 +1038,30 @@ void Render::CreateVertexBuffers()
         vertexBuffer, vertexBufferMemory);
 
     CopyBuffer(device, commandPool, graphicsQueue, stagingBuffer, vertexBuffer, bufferSize);
+
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
+void Render::CreateIndexBuffers()
+{
+    VkDeviceSize bufferSize = sizeof(INDICES[0]) * INDICES.size();
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    CreateBuffer(physicalDevice, device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, INDICES.data(), bufferSize);
+    vkUnmapMemory(device, stagingBufferMemory);
+
+    CreateBuffer(physicalDevice, device, bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        indexBuffer, indexBufferMemory);
+
+    CopyBuffer(device, commandPool, graphicsQueue, stagingBuffer, indexBuffer, bufferSize);
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
@@ -1188,7 +1217,9 @@ void Render::RecordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t i
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(INDICES.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 

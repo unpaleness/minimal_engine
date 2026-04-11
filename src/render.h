@@ -34,6 +34,7 @@ private:
     void CreateFrameBuffers();
     void CreateCommandPool();
     void CreateVertexBuffers();
+    void CreateIndexBuffers();
     void CreateCommandBuffers();
     void CreateSyncObjects();
     void CreateSyncObjectsPresent();
@@ -63,6 +64,8 @@ private:
     VkCommandPool commandPool = nullptr;
     VkBuffer vertexBuffer = nullptr;
     VkDeviceMemory vertexBufferMemory = nullptr;
+    VkBuffer indexBuffer = nullptr;
+    VkDeviceMemory indexBufferMemory = nullptr;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> presentSemaphores;
