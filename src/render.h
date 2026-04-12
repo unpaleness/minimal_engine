@@ -30,17 +30,22 @@ private:
     void CreateSwapChain();
     void CreateImageViews();
     void CreateRenderPass();
+    void CreateDescriptorSetLayout();
     void CreateGraphicsPipeline();
     void CreateFrameBuffers();
     void CreateCommandPool();
     void CreateVertexBuffers();
     void CreateIndexBuffers();
+    void CreateUniformBuffers();
+    void CreateDescriptorPool();
+    void CreateDescriptorSets();
     void CreateCommandBuffers();
     void CreateSyncObjects();
     void CreateSyncObjectsPresent();
     void CleanSwapChain();
     void RecreateSwapChain();
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void UpdateUniformBuffer(uint32_t currentImage);
 
 private:
     GLFWwindow* window = nullptr;
@@ -57,6 +62,7 @@ private:
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
+    VkDescriptorSetLayout descriptorSetLayout = nullptr;
     VkPipelineLayout pipelineLayout = nullptr;
     VkRenderPass renderPass = nullptr;
     VkPipeline graphicsPipeline = nullptr;
@@ -66,6 +72,11 @@ private:
     VkDeviceMemory vertexBufferMemory = nullptr;
     VkBuffer indexBuffer = nullptr;
     VkDeviceMemory indexBufferMemory = nullptr;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    std::vector<void*> uniformBuffersMapped;
+    VkDescriptorPool descriptorPool = nullptr;
+    std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> presentSemaphores;
