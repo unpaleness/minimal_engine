@@ -35,8 +35,14 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
         "${SHADER_OUT_DIR_FULL}"
         "$<TARGET_PROPERTY:${CMAKE_PROJECT_NAME},BINARY_DIR>/${SHADER_OUT_DIR}"
         COMMENT "Copying compiled shaders")
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${PROJECT_SOURCE_DIR}/src/textures"
+        "$<TARGET_PROPERTY:${CMAKE_PROJECT_NAME},BINARY_DIR>/textures"
+        COMMENT "Copying textures")
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/app.cpp src/app.h src/render.cpp src/render.h)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ../stb/)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE GLFW_INCLUDE_VULKAN)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE PROJECT_NAME="${CMAKE_PROJECT_NAME}")
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE SHADER_OUT_DIR="${SHADER_OUT_DIR}")

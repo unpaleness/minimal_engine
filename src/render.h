@@ -34,6 +34,7 @@ private:
     void CreateGraphicsPipeline();
     void CreateFrameBuffers();
     void CreateCommandPool();
+    void CreateTextureImage();
     void CreateVertexBuffers();
     void CreateIndexBuffers();
     void CreateUniformBuffers();
@@ -75,6 +76,8 @@ private:
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
+    VkImage textureImage = nullptr;
+    VkDeviceMemory textureImageMemory = nullptr;
     VkDescriptorPool descriptorPool = nullptr;
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkCommandBuffer> commandBuffers;
