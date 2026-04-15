@@ -28,7 +28,7 @@ namespace
         glm::vec2 pos;
         glm::vec3 color;
 
-        static VkVertexInputBindingDescription getBindingDescription()
+        static VkVertexInputBindingDescription GetBindingDescription()
         {
             return {
                 .binding = 0,
@@ -37,7 +37,7 @@ namespace
             };
         }
 
-        static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+        static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
         {
             return {VkVertexInputAttributeDescription{
                         .location = 0,
@@ -906,8 +906,8 @@ void Render::CreateGraphicsPipeline()
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = Vertex::GetBindingDescription();
+    auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
