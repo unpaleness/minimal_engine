@@ -112,6 +112,7 @@ private:
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
+    uint32_t mipLevels;
     VkImage textureImage = nullptr;
     VkImageView textureImageView = nullptr;
     VkSampler textureSampler = nullptr;

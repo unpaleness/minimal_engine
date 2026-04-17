@@ -25,6 +25,7 @@ void App::InitWindow()
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
     window = glfwCreateWindow(WIDTH, HEIGHT, PROJECT_NAME, nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
