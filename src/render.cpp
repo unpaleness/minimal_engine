@@ -9,11 +9,14 @@
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 // vulkan header are included here as we defined GLFW_INCLUDE_VULKAN in CMakeLists.txt
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -75,12 +78,6 @@ namespace
         if (enableValidationLayers)
         {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-
-        std::cout << "extensions to enable:\n";
-        for (const char* extension : extensions)
-        {
-            std::cout << '\t' << extension << '\n';
         }
 
         return extensions;
@@ -768,6 +765,17 @@ void Render::OnFrameBufferResized()
     framebufferResized = true;
 }
 
+bool Render::Vertex::operator==(const Vertex& other) const
+{
+    return pos == other.pos && color == other.color && texCoord == other.texCoord;
+}
+
+size_t Render::VertexHash::operator()(const Vertex& vertex) const
+{
+    return ((std::hash<glm::vec3>{}(vertex.pos) ^ (std::hash<glm::vec3>{}(vertex.color) << 1)) >> 1)
+        ^ (std::hash<glm::vec2>{}(vertex.texCoord) << 1);
+}
+
 VkVertexInputBindingDescription Render::Vertex::GetBindingDescription()
 {
     return {
@@ -1393,6 +1401,8 @@ void Render::LoadModel()
         throw std::runtime_error(err);
     }
 
+    std::unordered_map<Vertex, uint32_t, VertexHash> uniqueVertices;
+
     for (const auto& shape : shapes)
     {
         for (const auto& index : shape.mesh.indices)
@@ -1407,10 +1417,17 @@ void Render::LoadModel()
 
             vertex.color = {1.0f, 1.0f, 1.0f};
 
-            vertices.push_back(vertex);
-            indices.push_back(static_cast<uint32_t>(indices.size()));
+            if (!uniqueVertices.contains(vertex))
+            {
+                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                vertices.push_back(vertex);
+            }
+
+            indices.push_back(uniqueVertices[vertex]);
         }
     }
+
+    std::cout << std::format("vertices: {}\n", vertices.size());
 }
 
 void Render::CreateVertexBuffers()

@@ -35,8 +35,14 @@ private:
         glm::vec3 color;
         glm::vec2 texCoord;
 
+        bool operator==(const Vertex& other) const;
         static VkVertexInputBindingDescription GetBindingDescription();
         static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions();
+    };
+
+    struct VertexHash
+    {
+        size_t operator()(const Vertex& vertex) const;
     };
 
     struct UniformBufferObject
