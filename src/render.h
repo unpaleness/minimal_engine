@@ -1,8 +1,15 @@
 ﻿#pragma once
 
+#include <array>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
+
+// Force using radians
+#define GLM_FORCE_RADIANS
+// Force using 0 to 1 depth for Vulkan instead of -1 to 1 default for OpenGL
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
 
 struct GLFWwindow;
 
@@ -22,6 +29,23 @@ public:
     void OnFrameBufferResized();
 
 private:
+    struct Vertex
+    {
+        glm::vec3 pos;
+        glm::vec3 color;
+        glm::vec2 texCoord;
+
+        static VkVertexInputBindingDescription GetBindingDescription();
+        static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions();
+    };
+
+    struct UniformBufferObject
+    {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
+
     void CreateInstance();
     void SetupDebugMessenger();
     void CreateSurface();
@@ -38,6 +62,7 @@ private:
     void CreateTextureImageView();
     void CreateTextureSampler();
     void CreateDepthResources();
+    void LoadModel();
     void CreateVertexBuffers();
     void CreateIndexBuffers();
     void CreateUniformBuffers();
@@ -72,6 +97,8 @@ private:
     VkPipeline graphicsPipeline = nullptr;
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkCommandPool commandPool = nullptr;
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
     VkBuffer vertexBuffer = nullptr;
     VkDeviceMemory vertexBufferMemory = nullptr;
     VkBuffer indexBuffer = nullptr;

@@ -13,77 +13,20 @@
 
 // vulkan header are included here as we defined GLFW_INCLUDE_VULKAN in CMakeLists.txt
 #include <GLFW/glfw3.h>
-// Force using radians
-#define GLM_FORCE_RADIANS
-// Force using 0 to 1 depth for Vulkan instead of -1 to 1 default for OpenGL
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#include <tiny_obj_loader.h>
 
 namespace
 {
     const std::vector<const char*> VALIDATION_LAYERS{"VK_LAYER_KHRONOS_validation"};
     const std::vector<const char*> DEVICE_EXTENSIONS{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-
-    struct Vertex
-    {
-        glm::vec3 pos;
-        glm::vec3 color;
-        glm::vec2 texCoord;
-
-        static VkVertexInputBindingDescription GetBindingDescription()
-        {
-            return {
-                .binding = 0,
-                .stride = sizeof(Vertex),
-                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-            };
-        }
-
-        static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
-        {
-            return {VkVertexInputAttributeDescription{
-                        .location = 0,
-                        .binding = 0,
-                        .format = VK_FORMAT_R32G32B32_SFLOAT,
-                        .offset = offsetof(Vertex, pos),
-                    },
-                VkVertexInputAttributeDescription{
-                    .location = 1,
-                    .binding = 0,
-                    .format = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset = offsetof(Vertex, color),
-                },
-                VkVertexInputAttributeDescription{
-                    .location = 2,
-                    .binding = 0,
-                    .format = VK_FORMAT_R32G32_SFLOAT,
-                    .offset = offsetof(Vertex, texCoord),
-                }};
-        }
-    };
-
-    struct UniformBufferObject
-    {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 proj;
-    };
-
-    const std::vector<Vertex> VERTICES = {{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}}, {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-        {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
-
-    const std::vector<uint16_t> INDICES = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
+    const std::string MODEL_PATH{"models/viking_room.obj"};
+    const std::string TEXTURE_PATH{"textures/viking_room.png"};
 
     // not const to get rid of warnings
 #ifdef NDEBUG
@@ -693,6 +636,7 @@ Render::Render(GLFWwindow* aWindow) :
     CreateTextureSampler();
     CreateDepthResources();
     CreateFrameBuffers();
+    LoadModel();
     CreateVertexBuffers();
     CreateIndexBuffers();
     CreateUniformBuffers();
@@ -824,6 +768,37 @@ void Render::OnFrameBufferResized()
     framebufferResized = true;
 }
 
+VkVertexInputBindingDescription Render::Vertex::GetBindingDescription()
+{
+    return {
+        .binding = 0,
+        .stride = sizeof(Vertex),
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+    };
+}
+
+std::array<VkVertexInputAttributeDescription, 3> Render::Vertex::GetAttributeDescriptions()
+{
+    return {VkVertexInputAttributeDescription{
+                .location = 0,
+                .binding = 0,
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
+                .offset = offsetof(Vertex, pos),
+            },
+        VkVertexInputAttributeDescription{
+            .location = 1,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32_SFLOAT,
+            .offset = offsetof(Vertex, color),
+        },
+        VkVertexInputAttributeDescription{
+            .location = 2,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32_SFLOAT,
+            .offset = offsetof(Vertex, texCoord),
+        }};
+}
+
 void Render::CreateInstance()
 {
     if (enableValidationLayers && !CheckValidationLayerSupport())
@@ -923,10 +898,11 @@ void Render::PickPhysicalDevice()
 
 void Render::CreateLogicalDevice()
 {
-    QueueFamilyIndices indices = FindQueueFamilies(physicalDevice, surface);
+    QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(physicalDevice, surface);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::set uniqueQueueFamilies = {
+        queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value()};
 
     float queuePriority = 1.0f;
     for (const uint32_t queueFamily : uniqueQueueFamilies)
@@ -954,8 +930,8 @@ void Render::CreateLogicalDevice()
     {
         throw std::runtime_error("failed to create logical device!");
     }
-    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &presentQueue);
+    vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0, &graphicsQueue);
+    vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0, &presentQueue);
 }
 
 void Render::CreateSwapChain()
@@ -983,14 +959,15 @@ void Render::CreateSwapChain()
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = FindQueueFamilies(physicalDevice, surface);
-    uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(physicalDevice, surface);
+    uint32_t queueFamilyIndicesArray[] = {
+        queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value()};
 
-    if (indices.graphicsFamily != indices.presentFamily)
+    if (queueFamilyIndices.graphicsFamily != queueFamilyIndices.presentFamily)
     {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+        createInfo.pQueueFamilyIndices = queueFamilyIndicesArray;
     }
     else
     {
@@ -1317,7 +1294,7 @@ void Render::CreateCommandPool()
 void Render::CreateTextureImage()
 {
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("textures/ok.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels)
@@ -1403,9 +1380,42 @@ void Render::CreateDepthResources()
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
+void Render::LoadModel()
+{
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn;
+    std::string err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str()))
+    {
+        throw std::runtime_error(err);
+    }
+
+    for (const auto& shape : shapes)
+    {
+        for (const auto& index : shape.mesh.indices)
+        {
+            Vertex vertex{};
+
+            vertex.pos = {attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2]};
+
+            vertex.texCoord = {
+                attrib.texcoords[2 * index.texcoord_index + 0], attrib.texcoords[2 * index.texcoord_index + 1]};
+
+            vertex.color = {1.0f, 1.0f, 1.0f};
+
+            vertices.push_back(vertex);
+            indices.push_back(static_cast<uint32_t>(indices.size()));
+        }
+    }
+}
+
 void Render::CreateVertexBuffers()
 {
-    VkDeviceSize bufferSize = sizeof(VERTICES[0]) * VERTICES.size();
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -1414,7 +1424,7 @@ void Render::CreateVertexBuffers()
 
     void* data;
     vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, VERTICES.data(), bufferSize);
+    memcpy(data, vertices.data(), bufferSize);
     vkUnmapMemory(device, stagingBufferMemory);
 
     CreateBuffer(physicalDevice, device, bufferSize,
@@ -1429,7 +1439,7 @@ void Render::CreateVertexBuffers()
 
 void Render::CreateIndexBuffers()
 {
-    VkDeviceSize bufferSize = sizeof(INDICES[0]) * INDICES.size();
+    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -1438,7 +1448,7 @@ void Render::CreateIndexBuffers()
 
     void* data;
     vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, INDICES.data(), bufferSize);
+    memcpy(data, indices.data(), bufferSize);
     vkUnmapMemory(device, stagingBufferMemory);
 
     CreateBuffer(physicalDevice, device, bufferSize,
@@ -1695,11 +1705,11 @@ void Render::RecordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t i
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
         &descriptorSets[currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(INDICES.size()), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 

@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(../glfw _cmake/glfw)
 add_subdirectory(../glm _cmake/glm)
+add_subdirectory(../tinyobjloader _cmake/tinyobjloader)
 
 find_package(Vulkan REQUIRED)
 
@@ -41,18 +42,29 @@ add_custom_command(OUTPUT ${SHADER_COPY_TMP}
         DEPENDS shaders)
 add_custom_target(copy_shaders DEPENDS ${SHADER_COPY_TMP})
 
-set(TEXTURES_OUT_BUILD_DIR $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/textures)
+set(TEXTURES_RELATIVE_DIR textures)
+set(TEXTURES_OUT_BUILD_DIR $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${TEXTURES_RELATIVE_DIR})
 set(TEXTURES_COPY_TMP ${PROJECT_SOURCE_DIR}/copy_textures_tmp)
 add_custom_command(OUTPUT ${TEXTURES_COPY_TMP}
         COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_newer
-        "${PROJECT_SOURCE_DIR}/src/textures"
+        "${PROJECT_SOURCE_DIR}/${TEXTURES_RELATIVE_DIR}"
         "${TEXTURES_OUT_BUILD_DIR}")
 add_custom_target(copy_textures DEPENDS ${TEXTURES_COPY_TMP})
 
-add_dependencies(${CMAKE_PROJECT_NAME} copy_shaders copy_textures)
+set(MODELS_RELATIVE_DIR models)
+set(MODELS_OUT_BUILD_DIR $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${MODELS_RELATIVE_DIR})
+set(MODELS_COPY_TMP ${PROJECT_SOURCE_DIR}/copy_models_tmp)
+add_custom_command(OUTPUT ${MODELS_COPY_TMP}
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_newer
+        "${PROJECT_SOURCE_DIR}/${MODELS_RELATIVE_DIR}"
+        "${MODELS_OUT_BUILD_DIR}")
+add_custom_target(copy_models DEPENDS ${MODELS_COPY_TMP})
+
+add_dependencies(${CMAKE_PROJECT_NAME} copy_shaders copy_textures copy_models)
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/app.cpp src/app.h src/render.cpp src/render.h)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ../stb/)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ../tinyobjloader/)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE GLFW_INCLUDE_VULKAN)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE PROJECT_NAME="${CMAKE_PROJECT_NAME}")
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE SHADER_OUT_DIR="${SHADER_OUT_DIR}")
@@ -68,4 +80,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
         Vulkan::Vulkan
         glfw
         glm
+        tinyobjloader
 )
