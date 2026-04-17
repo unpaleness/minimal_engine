@@ -37,6 +37,7 @@ private:
     void CreateTextureImage();
     void CreateTextureImageView();
     void CreateTextureSampler();
+    void CreateDepthResources();
     void CreateVertexBuffers();
     void CreateIndexBuffers();
     void CreateUniformBuffers();
@@ -82,6 +83,9 @@ private:
     VkImageView textureImageView = nullptr;
     VkSampler textureSampler = nullptr;
     VkDeviceMemory textureImageMemory = nullptr;
+    VkImage depthImage = nullptr;
+    VkDeviceMemory depthImageMemory = nullptr;
+    VkImageView depthImageView = nullptr;
     VkDescriptorPool descriptorPool = nullptr;
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkCommandBuffer> commandBuffers;
