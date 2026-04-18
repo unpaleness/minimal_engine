@@ -67,6 +67,7 @@ private:
     void CreateTextureImage();
     void CreateTextureImageView();
     void CreateTextureSampler();
+    void CreateColorResources();
     void CreateDepthResources();
     void LoadModel();
     void CreateVertexBuffers();
@@ -113,10 +114,14 @@ private:
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
     uint32_t mipLevels;
+    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkImage textureImage = nullptr;
     VkImageView textureImageView = nullptr;
     VkSampler textureSampler = nullptr;
     VkDeviceMemory textureImageMemory = nullptr;
+    VkImage colorImage = nullptr;
+    VkDeviceMemory colorImageMemory = nullptr;
+    VkImageView colorImageView = nullptr;
     VkImage depthImage = nullptr;
     VkDeviceMemory depthImageMemory = nullptr;
     VkImageView depthImageView = nullptr;
